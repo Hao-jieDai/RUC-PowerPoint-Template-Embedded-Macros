@@ -2,6 +2,8 @@
 
 适用于 Windows 版 Microsoft PowerPoint 的人大风格可编辑模板，内置章节导航、圆点跳转、目录更新和页码刷新功能。
 
+下载模板 · 查看 Releases：https://github.com/Hao-jieDai/RUC-PowerPoint-Template-Embedded-Macros/releases
+
 预览图：预览.png
 
 1. 人大模板来源
