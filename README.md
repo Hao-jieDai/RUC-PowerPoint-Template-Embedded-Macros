@@ -2,7 +2,7 @@
 
 从人大 LaTeX Beamer 模板改编的可编辑 PowerPoint，提供**人大通用版**和**生态环境学院版**。两套模板均内置章节导航、圆点跳转、目录更新、页脚同步和页码刷新功能，适用于 Windows 版 Microsoft PowerPoint。
 
-**[完整发布包与历史版本 · Releases](https://github.com/Hao-jieDai/RUC-PowerPoint-Template-Embedded-Macros/releases)**
+**[下载最新发布包 · Releases](https://github.com/Hao-jieDai/RUC-PowerPoint-Template-Embedded-Macros/releases/latest)**
 
 ## 选择与下载
 
