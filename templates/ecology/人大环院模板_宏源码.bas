@@ -1,7 +1,18 @@
-﻿Attribute VB_Name = "RUCNavigation"
+Attribute VB_Name = "RUCNavigation"
 Option Explicit
 
-' RUC Ecology PowerPoint Template (Embedded Macros), VBA edition 2.2. No network, shell or auto-run.
+' Use UTF-16 strings directly; the Windows ANSI code page is never involved.
+#If VBA7 Then
+Private Declare PtrSafe Function NativeMessageBoxW Lib "user32" Alias "MessageBoxW" ( _
+    ByVal owner As LongPtr, ByVal textPtr As LongPtr, ByVal titlePtr As LongPtr, ByVal flags As Long) As Long
+Private Declare PtrSafe Function NativeActiveWindow Lib "user32" Alias "GetActiveWindow" () As LongPtr
+#Else
+Private Declare Function NativeMessageBoxW Lib "user32" Alias "MessageBoxW" ( _
+    ByVal owner As Long, ByVal textPtr As Long, ByVal titlePtr As Long, ByVal flags As Long) As Long
+Private Declare Function NativeActiveWindow Lib "user32" Alias "GetActiveWindow" () As Long
+#End If
+
+' RUC Ecology PowerPoint Template (Embedded Macros), VBA edition 2.2.1. No network, shell or auto-run.
 ' Navigation and editable contents are deliberately maintained separately.
 Private Const NAV As String = "RUC_NAV_"
 Private Const ENTRY As String = "RUC_TOC_ENTRY_"
@@ -15,7 +26,7 @@ Public Sub RUC_RefreshNavigation()
     RefreshDeck p
     Exit Sub
 Failed:
-    MsgBox "刷新未完成：" & Err.Description, vbExclamation, "人大环院模板"
+    UnicodeMessage U("5237 65B0 672A 5B8C 6210 FF1A") & Err.Description, vbExclamation, U("4EBA 5927 73AF 9662 6A21 677F")
 End Sub
 
 Public Sub RUC_OnRefresh(control As IRibbonControl)
@@ -31,19 +42,19 @@ Public Sub RUC_OnHelp(control As IRibbonControl)
 End Sub
 
 Public Sub RUC_Help()
-    MsgBox "1. 在左侧缩略图中，右键节名称，重命名或新增节。" & vbCrLf & _
-        "2. 增删、移动页面后，点击【刷新导航和页码】。" & vbCrLf & _
-        "3. 目录文字可直接修改，普通刷新会保留文字和位置。" & vbCrLf & _
-        "4. 需要按节重新生成目录时，单独点击【从节重新生成目录】。" & vbCrLf & _
-        "5. 编辑时保存为 .pptm；放映前刷新并另存为 .pptx。" & vbCrLf & _
-        "普通 .pptx 的跳转和已保存的页码无需宏即可放映。" & vbCrLf & vbCrLf & _
-        "统一修改页脚：编辑第一页封面中的题目、姓名和学院，再刷新。" & vbCrLf & _
-        "完整使用方法请参阅随附的 README.txt。", vbInformation, "人大环院模板使用说明"
+    UnicodeMessage U("0031 002E 0020 5728 5DE6 4FA7 7F29 7565 56FE 4E2D FF0C 53F3 952E 8282 540D 79F0 FF0C 91CD 547D 540D 6216 65B0 589E 8282 3002") & vbCrLf & _
+        U("0032 002E 0020 589E 5220 3001 79FB 52A8 9875 9762 540E FF0C 70B9 51FB 3010 5237 65B0 5BFC 822A 548C 9875 7801 3011 3002") & vbCrLf & _
+        U("0033 002E 0020 76EE 5F55 6587 5B57 53EF 76F4 63A5 4FEE 6539 FF0C 666E 901A 5237 65B0 4F1A 4FDD 7559 6587 5B57 548C 4F4D 7F6E 3002") & vbCrLf & _
+        U("0034 002E 0020 9700 8981 6309 8282 91CD 65B0 751F 6210 76EE 5F55 65F6 FF0C 5355 72EC 70B9 51FB 3010 4ECE 8282 91CD 65B0 751F 6210 76EE 5F55 3011 3002") & vbCrLf & _
+        U("0035 002E 0020 7F16 8F91 65F6 4FDD 5B58 4E3A 0020 002E 0070 0070 0074 006D FF1B 653E 6620 524D 5237 65B0 5E76 53E6 5B58 4E3A 0020 002E 0070 0070 0074 0078 3002") & vbCrLf & _
+        U("666E 901A 0020 002E 0070 0070 0074 0078 0020 7684 8DF3 8F6C 548C 5DF2 4FDD 5B58 7684 9875 7801 65E0 9700 5B8F 5373 53EF 653E 6620 3002") & vbCrLf & vbCrLf & _
+        U("7EDF 4E00 4FEE 6539 9875 811A FF1A 7F16 8F91 7B2C 4E00 9875 5C01 9762 4E2D 7684 9898 76EE 3001 59D3 540D 548C 5B66 9662 FF0C 518D 5237 65B0 3002") & vbCrLf & _
+        U("5B8C 6574 4F7F 7528 65B9 6CD5 8BF7 53C2 9605 968F 9644 7684 0020 0052 0045 0041 0044 004D 0045 002E 0074 0078 0074 3002"), vbInformation, U("4EBA 5927 73AF 9662 6A21 677F 4F7F 7528 8BF4 660E")
 End Sub
 
 Private Sub RequireTemplate(p As Presentation)
-    If p.Tags("RUC_MACRO_TEMPLATE") <> "1" Then Err.Raise vbObjectError + 101, , "请先切换到人大环院内置宏模板创建的演示文稿。"
-    If p.ReadOnly Then Err.Raise vbObjectError + 102, , "当前文稿只读，请另存为可编辑的 .pptm 文件。"
+    If p.Tags("RUC_MACRO_TEMPLATE") <> "1" Then Err.Raise vbObjectError + 101, , U("8BF7 5148 5207 6362 5230 4EBA 5927 73AF 9662 5185 7F6E 5B8F 6A21 677F 521B 5EFA 7684 6F14 793A 6587 7A3F 3002")
+    If p.ReadOnly Then Err.Raise vbObjectError + 102, , U("5F53 524D 6587 7A3F 53EA 8BFB FF0C 8BF7 53E6 5B58 4E3A 53EF 7F16 8F91 7684 0020 002E 0070 0070 0074 006D 0020 6587 4EF6 3002")
 End Sub
 
 Private Function MinVal(ByVal a As Double, ByVal b As Double) As Double
@@ -74,7 +85,7 @@ Private Function GetSections(p As Presentation) As Collection
         Set indices = New Collection
         For k = 1 To p.Slides.Count: indices.Add k: Next k
         Set record = New Collection
-        record.Add "报告内容", "name": record.Add indices, "slides": record.Add "fallback", "id"
+        record.Add U("62A5 544A 5185 5BB9"), "name": record.Add indices, "slides": record.Add "fallback", "id"
         If indices.Count > 0 Then result.Add record
     Else
         For j = 1 To p.SectionProperties.Count
@@ -131,7 +142,7 @@ Private Sub LinkTo(sh As Shape, target As Slide, label As String)
     With sh.ActionSettings(ppMouseClick)
         .Action = ppActionHyperlink
         .Hyperlink.Address = ""
-        .Hyperlink.SubAddress = CStr(target.SlideID) & "," & CStr(target.SlideIndex) & "," & Replace(label, ",", "，")
+        .Hyperlink.SubAddress = CStr(target.SlideID) & "," & CStr(target.SlideIndex) & "," & Replace(label, ",", U("FF0C"))
     End With
     sh.AlternativeText = label
 End Sub
@@ -186,7 +197,7 @@ Private Sub NormalizeTextPlaceholders(p As Presentation)
                         nm = sh.Name: x = sh.Left: y = sh.Top: w = sh.Width: h = sh.Height: pos = sh.ZOrderPosition
                         Set copies = sh.Duplicate
                         Set clone = copies(1)
-                        If clone.Type = msoPlaceholder Then Err.Raise vbObjectError + 104, , "未能将文字占位框转换为普通文本框。"
+                        If clone.Type = msoPlaceholder Then Err.Raise vbObjectError + 104, , U("672A 80FD 5C06 6587 5B57 5360 4F4D 6846 8F6C 6362 4E3A 666E 901A 6587 672C 6846 3002")
                         clone.Left = x: clone.Top = y: clone.Width = w: clone.Height = h
                         sh.Delete
                         clone.Name = nm
@@ -252,12 +263,12 @@ Public Sub RefreshDeck(p As Presentation)
                     Set sh = mast.Shapes.AddShape(msoShapeOval, dx(idx), 20 * sy, dd(idx), dd(idx))
                     sh.Name = NAV & "DOT_" & p.Slides(idx).SlideID
                     sh.Line.ForeColor.RGB = muted: sh.Line.Weight = 0.65 * sx: sh.Fill.Visible = msoFalse
-                    LinkTo sh, p.Slides(idx), CStr(sec("name")) & " " & k & "/" & ids.Count & " · 第" & idx & "页"
+                    LinkTo sh, p.Slides(idx), CStr(sec("name")) & " " & k & "/" & ids.Count & U("0020 00B7 0020 7B2C") & idx & U("9875")
                 Next k
             Next a
-            Set sh = AddText(mast, NAV & "AUTHOR", Meta(p, "AUTHOR", "汇报人"), 17 * sx, h - 34 * sy, w * 0.36, 17 * sy, 10.8 * sx, white, ppAlignLeft)
-            Set sh = AddText(mast, NAV & "INSTITUTE", Meta(p, "INSTITUTE", "中国人民大学生态环境学院"), w * 0.38, h - 34 * sy, w * 0.596, 17 * sy, 10.8 * sx, white, ppAlignRight)
-            Set sh = AddText(mast, NAV & "TITLE", Meta(p, "TITLE", "报告标题"), 17 * sx, h - 15.2 * sy, w * 0.79, 15 * sy, 10.3 * sx, white, ppAlignLeft)
+            Set sh = AddText(mast, NAV & "AUTHOR", Meta(p, "AUTHOR", U("6C47 62A5 4EBA")), 17 * sx, h - 34 * sy, w * 0.36, 17 * sy, 10.8 * sx, white, ppAlignLeft)
+            Set sh = AddText(mast, NAV & "INSTITUTE", Meta(p, "INSTITUTE", U("4E2D 56FD 4EBA 6C11 5927 5B66 751F 6001 73AF 5883 5B66 9662")), w * 0.38, h - 34 * sy, w * 0.596, 17 * sy, 10.8 * sx, white, ppAlignRight)
+            Set sh = AddText(mast, NAV & "TITLE", Meta(p, "TITLE", U("62A5 544A 6807 9898")), 17 * sx, h - 15.2 * sy, w * 0.79, 15 * sy, 10.3 * sx, white, ppAlignLeft)
             Set sh = AddText(mast, NAV & "PAGE", "1", w - 90 * sx, h - 15.2 * sy, 28 * sx, 15 * sy, 10.5 * sx, white, ppAlignRight)
             sh.TextFrame.TextRange.Text = ""
             sh.TextFrame.TextRange.InsertSlideNumber
@@ -279,7 +290,7 @@ Public Sub RefreshDeck(p As Presentation)
             Set sh = s.Shapes.AddShape(msoShapeOval, dx(i), 20 * sy, dd(i), dd(i))
             sh.Name = NAV & "CURRENT": sh.Line.ForeColor.RGB = white: sh.Line.Weight = 0.65 * sx
             sh.Fill.Solid: sh.Fill.ForeColor.RGB = white
-            LinkTo sh, s, CStr(sec("name")) & " · 当前页"
+            LinkTo sh, s, CStr(sec("name")) & U("0020 00B7 0020 5F53 524D 9875")
         End If
         s.Tags.Add "RUC_NAV_OWNER", CStr(s.SlideID)
     Next i
@@ -290,7 +301,7 @@ Public Sub RefreshDeck(p As Presentation)
     ' Remove those replacement prompts after the text has been materialized.
     CleanPlaceholders p
     p.Tags.Add "RUC_NAV_SAVED_COUNT", CStr(n)
-    p.Tags.Add "RUC_NAV_VERSION", "2.2.0-SEE-VBA"
+    p.Tags.Add "RUC_NAV_VERSION", "2.2.1-SEE-VBA"
     p.Tags.Add "RUC_NAV_UPDATED_AT", Format(Now, "yyyy-mm-dd hh:nn:ss")
     p.Tags.Add "RUC_NAV_UPDATING", "0"
 End Sub
@@ -322,16 +333,16 @@ Public Sub RUC_RebuildContents()
     Dim p As Presentation
     Set p = ActivePresentation
     RequireTemplate p
-    If MsgBox("将按左侧的节名称重新生成所有目录页。" & vbCrLf & _
-        "模板目录条目的手动文字和位置会被替换；你另加的文本框会保留。" & vbCrLf & _
-        "只想更新顶部圆点和页码，请取消并选择【刷新导航和页码】。" & vbCrLf & vbCrLf & _
-        "确认重新生成目录？", vbYesNo + vbQuestion + vbDefaultButton2, "重新生成目录") <> vbYes Then Exit Sub
+    If UnicodeMessage(U("5C06 6309 5DE6 4FA7 7684 8282 540D 79F0 91CD 65B0 751F 6210 6240 6709 76EE 5F55 9875 3002") & vbCrLf & _
+        U("6A21 677F 76EE 5F55 6761 76EE 7684 624B 52A8 6587 5B57 548C 4F4D 7F6E 4F1A 88AB 66FF 6362 FF1B 4F60 53E6 52A0 7684 6587 672C 6846 4F1A 4FDD 7559 3002") & vbCrLf & _
+        U("53EA 60F3 66F4 65B0 9876 90E8 5706 70B9 548C 9875 7801 FF0C 8BF7 53D6 6D88 5E76 9009 62E9 3010 5237 65B0 5BFC 822A 548C 9875 7801 3011 3002") & vbCrLf & vbCrLf & _
+        U("786E 8BA4 91CD 65B0 751F 6210 76EE 5F55 FF1F"), vbYesNo + vbQuestion + vbDefaultButton2, U("91CD 65B0 751F 6210 76EE 5F55")) <> vbYes Then Exit Sub
     Application.StartNewUndoEntry
     RebuildContents p
     RefreshDeck p
     Exit Sub
 Failed:
-    MsgBox "目录未能更新：" & Err.Description, vbExclamation, "人大环院模板"
+    UnicodeMessage U("76EE 5F55 672A 80FD 66F4 65B0 FF1A") & Err.Description, vbExclamation, U("4EBA 5927 73AF 9662 6A21 677F")
 End Sub
 
 Public Sub RebuildContents(p As Presentation)
@@ -363,5 +374,23 @@ Public Sub RebuildContents(p As Presentation)
             Next a
         End If
     Next s
-    If count = 0 Then Err.Raise vbObjectError + 103, , "未找到模板目录页；请从示例复制一张目录页后重试。"
+    If count = 0 Then Err.Raise vbObjectError + 103, , U("672A 627E 5230 6A21 677F 76EE 5F55 9875 FF1B 8BF7 4ECE 793A 4F8B 590D 5236 4E00 5F20 76EE 5F55 9875 540E 91CD 8BD5 3002")
 End Sub
+
+
+' Decode UTF-16 hexadecimal code units from ASCII-only source literals.
+Private Function U(ByVal codeUnits As String) As String
+    Dim units() As String, i As Long, value As Long, result As String
+    units = Split(codeUnits, " ")
+    For i = LBound(units) To UBound(units)
+        value = CLng("&H" & units(i))
+        If value > 32767 Then value = value - 65536
+        result = result & ChrW(value)
+    Next i
+    U = result
+End Function
+
+Private Function UnicodeMessage(ByVal prompt As String, ByVal buttons As VbMsgBoxStyle, _
+    ByVal title As String) As VbMsgBoxResult
+    UnicodeMessage = NativeMessageBoxW(NativeActiveWindow(), StrPtr(prompt), StrPtr(title), CLng(buttons))
+End Function

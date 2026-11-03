@@ -82,6 +82,6 @@ README.md、README.txt：同一份使用说明；前者用于 GitHub 页面展�
 
 查看源码
 
-可以在 PowerPoint 按 Alt+F11 查看文件内的 VBA，也可以阅读随附的 人大环院模板_宏源码.bas。源码文件使用 UTF-8 编码，便于在 GitHub 和文本编辑器中查看；如果需要通过 VBA 编辑器重新导入，请先将源码另存为简体中文 Windows 的 GBK 编码。
+可以在 PowerPoint 按 Alt+F11 查看文件内的 VBA，也可以阅读随附的 人大环院模板_宏源码.bas。源码采用 ASCII 兼容写法，中文字符串在运行时通过 Unicode 还原，弹窗使用 Unicode 接口显示。随附的 `.bas` 文件可以直接导入 VBA 编辑器，无需转换为 GBK 编码。
 
 代码只在点击按钮时执行，不访问网络、不启动外部程序。所有幻灯片的备注区保持为空，必要说明均集中在 README 中。
