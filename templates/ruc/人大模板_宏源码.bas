@@ -1,47 +1,35 @@
 Attribute VB_Name = "RUCNavigation"
 Option Explicit
 
-' Use UTF-16 strings directly; the Windows ANSI code page is never involved.
-#If VBA7 Then
-Private Declare PtrSafe Function NativeMessageBoxW Lib "user32" Alias "MessageBoxW" ( _
-    ByVal owner As LongPtr, ByVal textPtr As LongPtr, ByVal titlePtr As LongPtr, ByVal flags As Long) As Long
-Private Declare PtrSafe Function NativeActiveWindow Lib "user32" Alias "GetActiveWindow" () As LongPtr
-#Else
-Private Declare Function NativeMessageBoxW Lib "user32" Alias "MessageBoxW" ( _
-    ByVal owner As Long, ByVal textPtr As Long, ByVal titlePtr As Long, ByVal flags As Long) As Long
-Private Declare Function NativeActiveWindow Lib "user32" Alias "GetActiveWindow" () As Long
-#End If
-
-' RUC PowerPoint Template (Embedded Macros), VBA edition 2.2.1. No network, shell or auto-run.
+' RUC PowerPoint Template (Embedded Macros), VBA edition 2.2.1, Mac test build 3. No network, shell or auto-run.
 ' Navigation and editable contents are deliberately maintained separately.
 Private Const NAV As String = "RUC_NAV_"
 Private Const ENTRY As String = "RUC_TOC_ENTRY_"
 
-Public Sub RUC_RefreshNavigation()
+Private Sub RUC_RefreshNavigation()
     On Error GoTo Failed
     Dim p As Presentation
     Set p = ActivePresentation
     RequireTemplate p
-    Application.StartNewUndoEntry
     RefreshDeck p
     Exit Sub
 Failed:
     UnicodeMessage U("5237 65B0 672A 5B8C 6210 FF1A") & Err.Description, vbExclamation, U("4EBA 5927 6A21 677F")
 End Sub
 
-Public Sub RUC_OnRefresh(control As IRibbonControl)
+Public Sub RucStd3Refresh(ByVal control As IRibbonControl)
     RUC_RefreshNavigation
 End Sub
 
-Public Sub RUC_OnContents(control As IRibbonControl)
+Public Sub RucStd3Contents(ByVal control As IRibbonControl)
     RUC_RebuildContents
 End Sub
 
-Public Sub RUC_OnHelp(control As IRibbonControl)
+Public Sub RucStd3Help(ByVal control As IRibbonControl)
     RUC_Help
 End Sub
 
-Public Sub RUC_Help()
+Private Sub RUC_Help()
     UnicodeMessage U("0031 002E 0020 5728 5DE6 4FA7 7F29 7565 56FE 4E2D FF0C 53F3 952E 8282 540D 79F0 FF0C 91CD 547D 540D 6216 65B0 589E 8282 3002") & vbCrLf & _
         U("0032 002E 0020 589E 5220 3001 79FB 52A8 9875 9762 540E FF0C 70B9 51FB 3010 5237 65B0 5BFC 822A 548C 9875 7801 3011 3002") & vbCrLf & _
         U("0033 002E 0020 76EE 5F55 6587 5B57 53EF 76F4 63A5 4FEE 6539 FF0C 666E 901A 5237 65B0 4F1A 4FDD 7559 6587 5B57 548C 4F4D 7F6E 3002") & vbCrLf & _
@@ -68,7 +56,7 @@ End Function
 Private Function Meta(p As Presentation, key As String, fallback As String) As String
     Dim sh As Shape
     Meta = fallback
-    If p.Slides.Count = 0 Then Exit Function
+    If p.Slides.count = 0 Then Exit Function
     For Each sh In p.Slides(1).Shapes
         If sh.Name = "RUC_META_" & key And sh.HasTextFrame Then
             Meta = Replace(Replace(sh.TextFrame.TextRange.Text, vbCr, " "), vbLf, " ")
@@ -81,23 +69,23 @@ Private Function GetSections(p As Presentation) As Collection
     Dim result As New Collection, j As Long, k As Long, first As Long, count As Long
     Dim label As String, excluded As String, indices As Collection, record As Collection
     excluded = "|" & p.Tags("RUC_NAV_EXCLUDE_SECTIONS") & "|"
-    If p.SectionProperties.Count = 0 Then
+    If p.SectionProperties.count = 0 Then
         Set indices = New Collection
-        For k = 1 To p.Slides.Count: indices.Add k: Next k
+        For k = 1 To p.Slides.count: indices.Add k: Next k
         Set record = New Collection
         record.Add U("62A5 544A 5185 5BB9"), "name": record.Add indices, "slides": record.Add "fallback", "id"
-        If indices.Count > 0 Then result.Add record
+        If indices.count > 0 Then result.Add record
     Else
-        For j = 1 To p.SectionProperties.Count
+        For j = 1 To p.SectionProperties.count
             label = p.SectionProperties.Name(j)
             first = p.SectionProperties.FirstSlide(j)
             count = p.SectionProperties.SlidesCount(j)
             If count > 0 And first > 0 And InStr(1, excluded, "|" & label & "|", vbTextCompare) = 0 Then
                 Set indices = New Collection
-                For k = first To MinVal(first + count - 1, p.Slides.Count): indices.Add k: Next k
+                For k = first To MinVal(first + count - 1, p.Slides.count): indices.Add k: Next k
                 Set record = New Collection
                 record.Add label, "name": record.Add indices, "slides"
-                record.Add p.SectionProperties.SectionID(j), "id"
+                record.Add p.SectionProperties.sectionId(j), "id"
                 result.Add record
             End If
         Next j
@@ -115,7 +103,7 @@ Private Function AddText(owner As Object, nm As String, value As String, x As Si
         .WordWrap = msoFalse: .AutoSize = ppAutoSizeNone
         .TextRange.Text = value
         .TextRange.Font.Name = "Times New Roman": .TextRange.Font.NameFarEast = "KaiTi"
-        .TextRange.Font.Size = Int(size + 0.5): .TextRange.Font.Color.RGB = color
+        .TextRange.Font.size = Int(size + 0.5): .TextRange.Font.color.RGB = color
         .TextRange.ParagraphFormat.Alignment = align
         .TextRange.ParagraphFormat.Bullet.Visible = msoFalse
         With .TextRange.ParagraphFormat
@@ -164,18 +152,17 @@ Private Function EmptyPlaceholder(sh As Shape) As Boolean
 KeepShape:
 End Function
 
-Public Sub RUC_CleanEmptyPlaceholders()
+Private Sub RUC_CleanEmptyPlaceholders()
     Dim p As Presentation
     Set p = ActivePresentation
     RequireTemplate p
-    Application.StartNewUndoEntry
     CleanPlaceholders p
 End Sub
 
 Private Sub CleanPlaceholders(p As Presentation)
     Dim s As Slide, j As Long, removed As Long
     For Each s In p.Slides
-        For j = s.Shapes.Count To 1 Step -1
+        For j = s.Shapes.count To 1 Step -1
             If EmptyPlaceholder(s.Shapes(j)) Then s.Shapes(j).Delete: removed = removed + 1
         Next j
     Next s
@@ -189,7 +176,7 @@ Private Sub NormalizeTextPlaceholders(p As Presentation)
     Dim j As Long, pos As Long, count As Long, nm As String
     Dim x As Single, y As Single, w As Single, h As Single
     For Each s In p.Slides
-        For j = s.Shapes.Count To 1 Step -1
+        For j = s.Shapes.count To 1 Step -1
             Set sh = s.Shapes(j)
             If sh.Type = msoPlaceholder And sh.HasTextFrame Then
                 If sh.PlaceholderFormat.ContainedType = msoAutoShape Or sh.PlaceholderFormat.ContainedType = msoTextBox Then
@@ -214,7 +201,7 @@ Private Sub NormalizeTextPlaceholders(p As Presentation)
 End Sub
 
 ' This routine intentionally does not write, recreate, or delete contents text.
-Public Sub RefreshDeck(p As Presentation)
+Private Sub RefreshDeck(p As Presentation)
     RequireTemplate p
     Dim n As Long, a As Long, k As Long, i As Long, j As Long, idx As Long, d As Long
     Dim sections As Collection, sec As Collection, ids As Collection
@@ -222,48 +209,48 @@ Public Sub RefreshDeck(p As Presentation)
     Dim hx() As Single, hw() As Single, hf() As Single, dx() As Single, dd() As Single, active() As Long
     Dim base As Single, gw As Single, gap As Single, diameter As Single
     Dim mast As Master, s As Slide, sh As Shape, used() As Boolean, muted As Long, white As Long
-    n = p.Slides.Count
+    n = p.Slides.count
     If n = 0 Then Exit Sub
     p.Tags.Add "RUC_NAV_UPDATING", "1"
     w = p.PageSetup.SlideWidth: h = p.PageSetup.SlideHeight: sx = w / 720: sy = h / 540
     Set sections = GetSections(p)
-    ReDim weight(0 To sections.Count): ReDim hx(0 To sections.Count): ReDim hw(0 To sections.Count): ReDim hf(0 To sections.Count)
-    ReDim dx(1 To n): ReDim dd(1 To n): ReDim active(1 To n): ReDim used(1 To p.Designs.Count)
+    ReDim weight(0 To sections.count): ReDim hx(0 To sections.count): ReDim hw(0 To sections.count): ReDim hf(0 To sections.count)
+    ReDim dx(1 To n): ReDim dd(1 To n): ReDim active(1 To n): ReDim used(1 To p.Designs.count)
     muted = RGB(184, 128, 137): white = RGB(255, 255, 255)
-    For a = 1 To sections.Count
+    For a = 1 To sections.count
         Set sec = sections(a): Set ids = sec("slides")
-        weight(a) = MaxVal(68, MaxVal(Len(sec("name")) * 11 + 10, ids.Count * 7.5 + 10))
+        weight(a) = MaxVal(68, MaxVal(Len(sec("name")) * 11 + 10, ids.count * 7.5 + 10))
         totalWeight = totalWeight + weight(a)
     Next a
     base = 17 * sx
-    For a = 1 To sections.Count
+    For a = 1 To sections.count
         Set sec = sections(a): Set ids = sec("slides")
         gw = (w - 34 * sx) * weight(a) / MaxVal(1, totalWeight)
-        gap = MinVal(7.6 * sx, (gw - 6 * sx) / MaxVal(1, ids.Count))
+        gap = MinVal(7.6 * sx, (gw - 6 * sx) / MaxVal(1, ids.count))
         diameter = MaxVal(1.3 * sx, MinVal(5 * sx, gap * 0.64))
         hx(a) = base: hw(a) = gw: hf(a) = MinVal(10.8 * sx, gw / MaxVal(1, Len(sec("name"))) * 0.94)
-        For k = 1 To ids.Count
+        For k = 1 To ids.count
             idx = ids(k): dx(idx) = base + (k - 1) * gap: dd(idx) = diameter: active(idx) = a
         Next k
         base = base + gw
     Next a
     For Each s In p.Slides: used(s.Design.Index) = True: Next s
-    For d = 1 To p.Designs.Count
+    For d = 1 To p.Designs.count
         If used(d) Then
             Set mast = p.Designs(d).SlideMaster
-            For j = mast.Shapes.Count To 1 Step -1
+            For j = mast.Shapes.count To 1 Step -1
                 If Left(mast.Shapes(j).Name, Len(NAV)) = NAV Then mast.Shapes(j).Delete
             Next j
-            For a = 1 To sections.Count
+            For a = 1 To sections.count
                 Set sec = sections(a): Set ids = sec("slides")
                 Set sh = AddText(mast, NAV & "SECTION_" & CStr(a - 1), CStr(sec("name")), hx(a), 1.4 * sy, hw(a) - 5 * sx, 15 * sy, hf(a), muted, ppAlignLeft)
                 LinkTo sh, p.Slides(ids(1)), CStr(sec("name"))
-                For k = 1 To ids.Count
+                For k = 1 To ids.count
                     idx = ids(k)
                     Set sh = mast.Shapes.AddShape(msoShapeOval, dx(idx), 20 * sy, dd(idx), dd(idx))
                     sh.Name = NAV & "DOT_" & p.Slides(idx).SlideID
-                    sh.Line.ForeColor.RGB = muted: sh.Line.Weight = 0.65 * sx: sh.Fill.Visible = msoFalse
-                    LinkTo sh, p.Slides(idx), CStr(sec("name")) & " " & k & "/" & ids.Count & U("0020 00B7 0020 7B2C") & idx & U("9875")
+                    sh.Line.ForeColor.RGB = muted: sh.Line.weight = 0.65 * sx: sh.Fill.Visible = msoFalse
+                    LinkTo sh, p.Slides(idx), CStr(sec("name")) & " " & k & "/" & ids.count & U("0020 00B7 0020 7B2C") & idx & U("9875")
                 Next k
             Next a
             Set sh = AddText(mast, NAV & "AUTHOR", Meta(p, "AUTHOR", U("6C47 62A5 4EBA")), 17 * sx, h - 34 * sy, w * 0.36, 17 * sy, 10.8 * sx, white, ppAlignLeft)
@@ -272,14 +259,14 @@ Public Sub RefreshDeck(p As Presentation)
             Set sh = AddText(mast, NAV & "PAGE", "1", w - 90 * sx, h - 15.2 * sy, 28 * sx, 15 * sy, 10.5 * sx, white, ppAlignRight)
             sh.TextFrame.TextRange.Text = ""
             sh.TextFrame.TextRange.InsertSlideNumber
-            sh.TextFrame.TextRange.Font.Name = "Times New Roman": sh.TextFrame.TextRange.Font.Size = Int(10.5 * sx + 0.5): sh.TextFrame.TextRange.Font.Color.RGB = white
+            sh.TextFrame.TextRange.Font.Name = "Times New Roman": sh.TextFrame.TextRange.Font.size = Int(10.5 * sx + 0.5): sh.TextFrame.TextRange.Font.color.RGB = white
             sh.TextFrame.TextRange.ParagraphFormat.Alignment = ppAlignRight
             Set sh = AddText(mast, NAV & "TOTAL", " / " & n, w - 62 * sx, h - 15.2 * sy, 45 * sx, 15 * sy, 10.5 * sx, white, ppAlignLeft)
         End If
     Next d
     For i = 1 To n
         Set s = p.Slides(i)
-        For j = s.Shapes.Count To 1 Step -1
+        For j = s.Shapes.count To 1 Step -1
             If s.Shapes(j).Name = NAV & "ACTIVE_SECTION" Or s.Shapes(j).Name = NAV & "CURRENT" Then s.Shapes(j).Delete
         Next j
         a = active(i)
@@ -288,7 +275,7 @@ Public Sub RefreshDeck(p As Presentation)
             Set sh = AddText(s, NAV & "ACTIVE_SECTION", CStr(sec("name")), hx(a), 1.4 * sy, hw(a) - 5 * sx, 15 * sy, hf(a), white, ppAlignLeft)
             LinkTo sh, p.Slides(ids(1)), CStr(sec("name"))
             Set sh = s.Shapes.AddShape(msoShapeOval, dx(i), 20 * sy, dd(i), dd(i))
-            sh.Name = NAV & "CURRENT": sh.Line.ForeColor.RGB = white: sh.Line.Weight = 0.65 * sx
+            sh.Name = NAV & "CURRENT": sh.Line.ForeColor.RGB = white: sh.Line.weight = 0.65 * sx
             sh.Fill.Solid: sh.Fill.ForeColor.RGB = white
             LinkTo sh, s, CStr(sec("name")) & U("0020 00B7 0020 5F53 524D 9875")
         End If
@@ -312,7 +299,7 @@ Private Sub UpdateContentsLinks(p As Presentation, sections As Collection)
         For Each sh In s.Shapes
             If Left(sh.Name, Len(ENTRY)) = ENTRY Then
                 sectionId = sh.Tags("RUC_TOC_SECTION_ID"): found = False
-                For a = 1 To sections.Count
+                For a = 1 To sections.count
                     Set sec = sections(a)
                     If StrComp(sectionId, CStr(sec("id")), vbTextCompare) = 0 Then
                         Set ids = sec("slides")
@@ -328,7 +315,7 @@ Private Sub UpdateContentsLinks(p As Presentation, sections As Collection)
     Next s
 End Sub
 
-Public Sub RUC_RebuildContents()
+Private Sub RUC_RebuildContents()
     On Error GoTo Failed
     Dim p As Presentation
     Set p = ActivePresentation
@@ -337,15 +324,14 @@ Public Sub RUC_RebuildContents()
         U("6A21 677F 76EE 5F55 6761 76EE 7684 624B 52A8 6587 5B57 548C 4F4D 7F6E 4F1A 88AB 66FF 6362 FF1B 4F60 53E6 52A0 7684 6587 672C 6846 4F1A 4FDD 7559 3002") & vbCrLf & _
         U("53EA 60F3 66F4 65B0 9876 90E8 5706 70B9 548C 9875 7801 FF0C 8BF7 53D6 6D88 5E76 9009 62E9 3010 5237 65B0 5BFC 822A 548C 9875 7801 3011 3002") & vbCrLf & vbCrLf & _
         U("786E 8BA4 91CD 65B0 751F 6210 76EE 5F55 FF1F"), vbYesNo + vbQuestion + vbDefaultButton2, U("91CD 65B0 751F 6210 76EE 5F55")) <> vbYes Then Exit Sub
-    Application.StartNewUndoEntry
-    RebuildContents p
+    RebuildContentsCore p
     RefreshDeck p
     Exit Sub
 Failed:
     UnicodeMessage U("76EE 5F55 672A 80FD 66F4 65B0 FF1A") & Err.Description, vbExclamation, U("4EBA 5927 6A21 677F")
 End Sub
 
-Public Sub RebuildContents(p As Presentation)
+Private Sub RebuildContentsCore(p As Presentation)
     RequireTemplate p
     Dim sections As Collection, sec As Collection, ids As Collection, s As Slide, sh As Shape
     Dim a As Long, j As Long, count As Long, sx As Single, sy As Single, pitch As Single
@@ -358,15 +344,15 @@ Public Sub RebuildContents(p As Presentation)
             x = Val(s.Tags("RUC_TOC_X")): y = Val(s.Tags("RUC_TOC_Y"))
             w = Val(s.Tags("RUC_TOC_W")): h = Val(s.Tags("RUC_TOC_H"))
             If w <= 0 Or h <= 0 Then x = 95 * sx: y = 170 * sy: w = 520 * sx: h = 260 * sy
-            For j = s.Shapes.Count To 1 Step -1
+            For j = s.Shapes.count To 1 Step -1
                 If Left(s.Shapes(j).Name, Len(ENTRY)) = ENTRY Then s.Shapes(j).Delete
             Next j
-            pitch = MinVal(52 * sy, h / MaxVal(1, sections.Count))
-            For a = 1 To sections.Count
+            pitch = MinVal(52 * sy, h / MaxVal(1, sections.count))
+            For a = 1 To sections.count
                 Set sec = sections(a): Set ids = sec("slides")
                 Set sh = AddText(s, ENTRY & a, a & "  " & CStr(sec("name")), x, y + (a - 1) * pitch, w, MinVal(34 * sy, pitch), 21 * sx, RGB(17, 17, 17), ppAlignLeft)
-                If s.SlideIndex >= ids(1) And s.SlideIndex <= ids(ids.Count) Then
-                    sh.TextFrame.TextRange.Font.Color.RGB = RGB(151, 31, 48)
+                If s.SlideIndex >= ids(1) And s.SlideIndex <= ids(ids.count) Then
+                    sh.TextFrame.TextRange.Font.color.RGB = RGB(151, 31, 48)
                     sh.TextFrame.TextRange.Font.Bold = msoTrue
                 End If
                 sh.Tags.Add "RUC_TOC_SECTION_ID", CStr(sec("id"))
@@ -378,19 +364,33 @@ Public Sub RebuildContents(p As Presentation)
 End Sub
 
 
-' Decode UTF-16 hexadecimal code units from ASCII-only source literals.
+' Decode ASCII hexadecimal pairs as the native UTF-16LE byte representation.
 Private Function U(ByVal codeUnits As String) As String
-    Dim units() As String, i As Long, value As Long, result As String
+    Dim units() As String, data() As Byte, i As Long
+    If Len(codeUnits) = 0 Then Exit Function
     units = Split(codeUnits, " ")
-    For i = LBound(units) To UBound(units)
-        value = CLng("&H" & units(i))
-        If value > 32767 Then value = value - 65536
-        result = result & ChrW(value)
+    ReDim data(0 To 2 * (UBound(units) + 1) - 1)
+    For i = 0 To UBound(units)
+        data(2 * i) = CByte("&H" & Right$(units(i), 2))
+        data(2 * i + 1) = CByte("&H" & Left$(units(i), 2))
     Next i
-    U = result
+    U = data
 End Function
 
 Private Function UnicodeMessage(ByVal prompt As String, ByVal buttons As VbMsgBoxStyle, _
     ByVal title As String) As VbMsgBoxResult
-    UnicodeMessage = NativeMessageBoxW(NativeActiveWindow(), StrPtr(prompt), StrPtr(title), CLng(buttons))
+    UnicodeMessage = MsgBox(prompt, buttons, title)
 End Function
+
+' Only these three zero-argument public procedures appear in the macro picker.
+Public Sub RefreshNavigation()
+    RUC_RefreshNavigation
+End Sub
+
+Public Sub RebuildContents()
+    RUC_RebuildContents
+End Sub
+
+Public Sub ShowHelp()
+    RUC_Help
+End Sub
